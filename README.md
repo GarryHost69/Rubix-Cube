@@ -1,1 +1,1 @@
-# Rubix-Cube
+Ideally this will be a really cool project where the aim is to make an AI solve a rubix cube (Totally not inspired by code bullet's video). So far You've got a 3x3 rubix cube fixed at a certain angle where the view only shows three faces and it's possible to perform all sorts of rotation on the rubix cube and randomly scramble it every time the page loads. Looking forward to future commits, which are totally going to happen ( ͡° ͜ʖ ͡°)
