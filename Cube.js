@@ -1,11 +1,15 @@
 var cubes = [];
 
-function Cube(x, y, z, s, f, b, t, bt, l, r) {
+function Cube(x, y, z, s, f, b, t, bt, l, r, left, right, top, bottom, back) {
 	this.points = [];
 	this.fc = f;
 	this.bc = b;
-	this.ct = 0;
 	this.tc = t;
+	this.ldisplay = left;
+	this.rdisplay = right;
+	this.tdisplay = top;
+	this.bdisplay = bottom;
+	this.backdisplay = back;
 	this.btc = bt;
 	this.lc = l;
 	this.rc = r;
@@ -111,35 +115,33 @@ function Cube(x, y, z, s, f, b, t, bt, l, r) {
 		this.rZ[2] = [0, 0, 1];
 	}
 	this.rotateX = function() {
-		strokeWeight(10);
 		this.initxyz();
 		let temp = [];
+		let zbuf = [];
 		this.points.forEach(p => {
 			var rotated = vectormul(this.rX, p);
+			zbuf.push(rotated[2][0]);
 			var p2d = vectormul(this.projection, rotated);
 			scalarmul(p2d, this.size);
 			let a = {x : p2d[0], y : p2d[1]};
-			temp.push(a);
+			temp.push(a)
 		});
-		this.join(temp);
+		this.join(temp, zbuf);
 		this.angle += 0.05;
 	}
 	this.rotateY = function() {
 		this.initxyz();
-		strokeWeight(10);
 		let temp = [];
+		let zbuf = [];
 		this.points.forEach(p => {
 			var rotated = vectormul(this.rY, p);
+			zbuf.push(rotated[2][0]);
 			var p2d = vectormul(this.projection, rotated);
 			scalarmul(p2d, this.size);
 			let a = {x : p2d[0], y : p2d[1]};
-			temp.push(a);
+			temp.push(a)
 		});
-		this.join(temp);
-		this.angle += 0.05;
-	}
-	this.rotate = function () {
-		this.initxyz();
+		this.join(temp, zbuf);
 		this.angle += 0.05;
 	}
 	this.rotateZ = function() {
@@ -156,33 +158,20 @@ function Cube(x, y, z, s, f, b, t, bt, l, r) {
 		this.angle += 0.05;
 	}
 	this.display = function() {
-		if (this.ct < 12) {
-			this.initxyz();
-			let temp = [];
-			this.points.forEach(p => {
-				var rotated = vectormul(this.rY, p);
-				rotated = vectormul(this.rX, rotated);
-				var p2d = vectormul(this.projection, rotated);
-				scalarmul(p2d, this.size);
-				let a = {x : p2d[0], y : p2d[1]};
-				temp.push(a)
-			});
-			this.join(temp);
-			this.angle += 0.05;
-			this.ct++;
-		}
-		else {
-			let temp = [];
-			this.points.forEach(p => {
-				var rotated = vectormul(this.rY, p);
-				rotated = vectormul(this.rX, rotated);
-				var p2d = vectormul(this.projection, rotated);
-				scalarmul(p2d, this.size);
-				let a = {x : p2d[0], y : p2d[1]};
-				temp.push(a)
-			});
-			this.join(temp);
-		}
+		this.initxyz();
+		let temp = [];
+		let zbuf = [];
+		this.points.forEach(p => {
+			var rotated = vectormul(this.rY, p);
+			rotated = vectormul(this.rX, rotated);
+			zbuf.push(rotated[2][0]);
+			var p2d = vectormul(this.projection, rotated);
+			scalarmul(p2d, this.size);
+			let a = {x : p2d[0], y : p2d[1]};
+			temp.push(a)
+		});
+		this.join(temp, zbuf);
+		this.angle += 0.05;
 	}
 	this.rotateTopBottomLeft = function() {
 		let temp = this.fc;
@@ -226,10 +215,49 @@ function Cube(x, y, z, s, f, b, t, bt, l, r) {
 		this.btc = this.lc;
 		this.lc = temp;
 	}
-	this.join = function(arr) {
-		this.front(arr);
-		this.top(arr);
-		this.right(arr);
+	this.join = function(arr, zarr) {
+		let min = zarr[0];
+		let mindex = 0;
+		for (let i = 0; i < zarr.length; i++) {
+			if (zarr[i] < min) {
+				min = zarr[i];
+				mindex = i;
+			}
+		}
+		switch (mindex) {
+			case 0:	this.front(arr);
+					if (this.tdisplay) {
+						this.top(arr);
+					}
+					if (this.ldisplay) {
+						this.left(arr);
+					}
+					break;
+			case 1: this.front(arr);
+					if (this.bdisplay) {
+						this.bottom(arr);
+					}
+					if (this.rdisplay) {
+						this.right(arr);
+					}
+					break;
+			case 2: this.front(arr);
+					if (this.bdisplay) {
+						this.bottom(arr);
+					}
+					if (this.ldisplay) {
+						this.left(arr);
+					}
+					break;
+			case 3: this.front(arr);
+					if (this.tdisplay) {
+						this.top(arr);
+					}
+					if (this.rdisplay) {
+						this.right(arr);
+					}
+					break;
+		}
 	}
 }
 
@@ -241,57 +269,57 @@ function start() {
 	let yellow = color(255, 255, 0);
 	let orange = color(255, 140, 0);
 	let black = color(0, 0, 0);
-	var c1 = new Cube(0, 200, 200, 50, red, orange, white, yellow, green, blue);
-	var c2 = new Cube(100, 200, 200, 50, red, orange, white, yellow, green, blue);
-	var c3 = new Cube(200, 200, 200, 50, red, orange, white, yellow, green, blue);
+	var c1 = new Cube(0, 200, 200, 50, red, orange, white, yellow, green, blue, true, false, true, true, true);
+	var c2 = new Cube(100, 200, 200, 50, red, orange, white, yellow, green, blue, false, false, true, true, true);
+	var c3 = new Cube(200, 200, 200, 50, red, orange, white, yellow, green, blue, false, true, true, true, true);
 	cubes.push(c1);
 	cubes.push(c2);
 	cubes.push(c3);
-	c1 = new Cube(0, 100, 200, 50, red, orange, white, yellow, green, blue);
-	c2 = new Cube(100, 100, 200, 50, red, orange, white, yellow, green, blue);
-	c3 = new Cube(200, 100, 200, 50, red, orange, white, yellow, green, blue);
+	c1 = new Cube(0, 100, 200, 50, red, orange, white, yellow, green, blue, true, false, true, false, true);
+	c2 = new Cube(100, 100, 200, 50, red, orange, white, yellow, green, blue, false, false, true, false, true);
+	c3 = new Cube(200, 100, 200, 50, red, orange, white, yellow, green, blue, false, true, true, false, true);
 	cubes.push(c1);
 	cubes.push(c2);
 	cubes.push(c3);
-	c1 = new Cube(0, 0, 200, 50, red, orange, white, yellow, green, blue);
-	c2 = new Cube(100, 0, 200, 50, red, orange, white, yellow, green, blue);
-	c3 = new Cube(200, 0, 200, 50, red, orange, white, yellow, green, blue);
+	c1 = new Cube(0, 0, 200, 50, red, orange, white, yellow, green, blue, true, false, true, false, true);
+	c2 = new Cube(100, 0, 200, 50, red, orange, white, yellow, green, blue, false, false, true, false, true);
+	c3 = new Cube(200, 0, 200, 50, red, orange, white, yellow, green, blue, false, true, true, false, true);
 	cubes.push(c1);
 	cubes.push(c2);
 	cubes.push(c3);
-	c1 = new Cube(0, 200, 100, 50, red, orange, white, yellow, green, blue);
-	c2 = new Cube(100, 200, 100, 50, red, orange, white, yellow, green, blue);
-	c3 = new Cube(200, 200, 100, 50, red, orange, white, yellow, green, blue);
+	c1 = new Cube(0, 200, 100, 50, red, orange, white, yellow, green, blue, true, false, false, true, false);
+	c2 = new Cube(100, 200, 100, 50, red, orange, white, yellow, green, blue, false, false, false, true, false);
+	c3 = new Cube(200, 200, 100, 50, red, orange, white, yellow, green, blue, false, true, false, true, false);
 	cubes.push(c1);
 	cubes.push(c2);
 	cubes.push(c3);
-	c1 = new Cube(0, 100, 100, 50, red, orange, white, yellow, green, blue);
-	c2 = new Cube(100, 100, 100, 50, red, orange, white, yellow, green, blue);
-	c3 = new Cube(200, 100, 100, 50, red, orange, white, yellow, green, blue);
+	c1 = new Cube(0, 100, 100, 50, red, orange, white, yellow, green, blue, true, false, false, false, false);
+	c2 = new Cube(100, 100, 100, 50, red, orange, white, yellow, green, blue, false, false, false, false, false);
+	c3 = new Cube(200, 100, 100, 50, red, orange, white, yellow, green, blue, false, true, false, false, false);
 	cubes.push(c1);
 	cubes.push(c2);
 	cubes.push(c3);
-	c1 = new Cube(0, 0, 100, 50, red, orange, white, yellow, green, blue);
-	c2 = new Cube(100, 0, 100, 50, red, orange, white, yellow, green, blue);
-	c3 = new Cube(200, 0, 100, 50, red, orange, white, yellow, green, blue);
+	c1 = new Cube(0, 0, 100, 50, red, orange, white, yellow, green, blue, true, false, true, false, false);
+	c2 = new Cube(100, 0, 100, 50, red, orange, white, yellow, green, blue, false, false, true, false, false);
+	c3 = new Cube(200, 0, 100, 50, red, orange, white, yellow, green, blue, false, true, true, false, false);
 	cubes.push(c1);
 	cubes.push(c2);
 	cubes.push(c3);
-	c1 = new Cube(0, 200, 0, 50, red, orange, white, yellow, green, blue);
-	c2 = new Cube(100, 200, 0, 50, red, orange, white, yellow, green, blue);
-	c3 = new Cube(200, 200, 0, 50, red, orange, white, yellow, green, blue);
+	c1 = new Cube(0, 200, 0, 50, red, orange, white, yellow, green, blue, true, false, false, true, false);
+	c2 = new Cube(100, 200, 0, 50, red, orange, white, yellow, green, blue, false, false, false, true, false);
+	c3 = new Cube(200, 200, 0, 50, red, orange, white, yellow, green, blue, false, true, false, true, false);
 	cubes.push(c1);
 	cubes.push(c2);
 	cubes.push(c3);
-	c1 = new Cube(0, 100, 0, 50, red, orange, white, yellow, green, blue);
-	c2 = new Cube(100, 100, 0, 50, red, orange, white, yellow, green, blue);
-	c3 = new Cube(200, 100, 0, 50, red, orange, white, yellow, green, blue);
+	c1 = new Cube(0, 100, 0, 50, red, orange, white, yellow, green, blue, true, false, false, false, false);
+	c2 = new Cube(100, 100, 0, 50, red, orange, white, yellow, green, blue, false, false, false, false, false);
+	c3 = new Cube(200, 100, 0, 50, red, orange, white, yellow, green, blue, false, true, false, false, false);
 	cubes.push(c1);
 	cubes.push(c2);
 	cubes.push(c3);
-	c1 = new Cube(0, 0, 0, 50, red, orange, white, yellow, green, blue);
-	c2 = new Cube(100, 0, 0, 50, red, orange, white, yellow, green, blue);
-	c3 = new Cube(200, 0, 0, 50, red, orange, white, yellow, green, blue);
+	c1 = new Cube(0, 0, 0, 50, red, orange, white, yellow, green, blue, true, false, true, false, false);
+	c2 = new Cube(100, 0, 0, 50, red, orange, white, yellow, green, blue, false, false, true, false, false);
+	c3 = new Cube(200, 0, 0, 50, red, orange, white, yellow, green, blue, false, true, true, false, false);
 	cubes.push(c1);
 	cubes.push(c2);
 	cubes.push(c3);
